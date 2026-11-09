@@ -10,6 +10,8 @@ const protectedRoutes = [
   '/settings',
   '/kyc',
   '/admin',
+  '/usdc',
+  '/about-arc',
 ];
 
 const authRoutes = ['/login', '/signup', '/forgot-password'];

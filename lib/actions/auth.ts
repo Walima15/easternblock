@@ -137,8 +137,8 @@ export async function getRecentTransactionsAction(limit = 5) {
 
 export { getRecentTransactionsAction as getRecentTransactions };
 
-export async function getAllTransactions(type?: string) {
+export async function getAllTransactions(type?: string, asset?: string) {
   const userId = await getSessionUserId();
   if (!userId) return [];
-  return getTransactions(userId, type);
+  return getTransactions(userId, type, asset);
 }

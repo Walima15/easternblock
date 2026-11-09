@@ -43,6 +43,38 @@ export const receiveSchema = z.object({
   memo: z.string().max(200).optional(),
 });
 
+export const buyUsdcSchema = z.object({
+  amountZmw: z.number().positive('Amount must be greater than zero').max(1_000_000),
+  provider: z.enum(['mtn', 'airtel', 'zamtel', 'bank', 'visa']),
+  phoneNumber: z.string().optional(),
+  idempotencyKey: z.string().uuid(),
+  simulateFailure: z.boolean().optional(),
+  simulatePending: z.boolean().optional(),
+});
+
+export const sellUsdcSchema = z.object({
+  amountUsdc: z.string().min(1, 'Amount is required'),
+  provider: z.enum(['mtn', 'airtel', 'zamtel', 'bank']),
+  phoneNumber: z.string().optional(),
+  idempotencyKey: z.string().uuid(),
+  simulateFailure: z.boolean().optional(),
+  simulatePending: z.boolean().optional(),
+});
+
+export const sendUsdcSchema = z.object({
+  recipient: z.string().min(1, 'Recipient is required'),
+  amountUsdc: z.string().min(1, 'Amount is required'),
+  memo: z.string().max(200).optional(),
+  idempotencyKey: z.string().uuid(),
+  simulateFailure: z.boolean().optional(),
+});
+
+export const receiveUsdcSchema = z.object({
+  amountUsdc: z.string().min(1, 'Amount is required'),
+  memo: z.string().max(200).optional(),
+  idempotencyKey: z.string().uuid(),
+});
+
 export const profileUpdateSchema = z.object({
   fullName: z.string().min(2).max(100).optional(),
   phoneNumber: z

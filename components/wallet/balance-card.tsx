@@ -1,7 +1,16 @@
 import Link from 'next/link';
-import { formatSats, formatZMW, convertSatsToZMW } from '@/lib/bitcoin/price';
+import { convertSatsToZMW, formatSats, formatZMW } from '@/lib/bitcoin/price';
+import { DEMO_USD_ZMW_RATE } from '@/lib/fx/usd-zmw';
+import {
+  transactionAmountText,
+  transactionAsset,
+  transactionIsCredit,
+  transactionTitle,
+  transactionZmw,
+} from '@/lib/transactions/present';
 import { Card, CardContent } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/link-button';
+import { Badge } from '@/components/ui/badge';
 import { ArrowDownLeft, ArrowUpRight, Send, QrCode } from 'lucide-react';
 import type { Transaction } from '@/types';
 import { EmptyState } from './empty-state';
@@ -55,31 +64,27 @@ export function QuickActions() {
 export function TransactionList({
   transactions,
   btcPrice,
+  zmwPerUsd = DEMO_USD_ZMW_RATE,
 }: {
   transactions: Transaction[];
   btcPrice: number;
+  zmwPerUsd?: number;
 }) {
   if (transactions.length === 0) {
     return (
       <EmptyState
         title="No transactions yet"
-        message="Buy, send, or receive Bitcoin to get started."
+        message="Buy, send, or receive Bitcoin or USDC to get started."
       />
     );
   }
 
-  const typeLabels: Record<string, string> = {
-    buy: 'Bitcoin purchased',
-    sell: 'Bitcoin sold',
-    send: 'Bitcoin sent',
-    receive: 'Bitcoin received',
-  };
-
   return (
     <div className="space-y-2">
       {transactions.map((tx) => {
-        const isPositive = tx.type === 'buy' || tx.type === 'receive';
-        const zmw = tx.amount_zmw ?? convertSatsToZMW(tx.amount_sats, btcPrice);
+        const isPositive = transactionIsCredit(tx);
+        const zmw = transactionZmw(tx, btcPrice, zmwPerUsd);
+        const asset = transactionAsset(tx);
 
         return (
           <Link
@@ -88,7 +93,14 @@ export function TransactionList({
             className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
           >
             <div>
-              <p className="font-medium capitalize">{typeLabels[tx.type] ?? tx.type}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium capitalize">{transactionTitle(tx)}</p>
+                {asset === 'usdc' && (
+                  <Badge variant="outline" className="border-sky-300 text-sky-800 dark:text-sky-200">
+                    USDC
+                  </Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {new Date(tx.created_at).toLocaleDateString('en-ZM', {
                   day: 'numeric',
@@ -100,7 +112,7 @@ export function TransactionList({
             <div className="text-right">
               <p className={`font-semibold ${isPositive ? 'text-emerald-600' : ''}`}>
                 {isPositive ? '+' : '-'}
-                {formatSats(tx.amount_sats)}
+                {transactionAmountText(tx)}
               </p>
               <p className="text-xs text-muted-foreground">≈ {formatZMW(Number(zmw))}</p>
             </div>

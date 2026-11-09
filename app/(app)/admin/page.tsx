@@ -1,4 +1,5 @@
 import { getAdminStats } from '@/lib/actions/wallet';
+import { formatUsdcFromBaseUnits } from '@/lib/arc/units';
 import { formatSats, formatZMW } from '@/lib/bitcoin/price';
 import { AppHeader } from '@/components/navigation/sidebar-nav';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ export default async function AdminPage() {
             { label: 'Total Users', value: stats.totalUsers },
             { label: 'Total Transactions', value: stats.totalTransactions },
             { label: 'BTC Volume', value: formatSats(stats.btcVolumeSats) },
+            { label: 'USDC Volume', value: `${formatUsdcFromBaseUnits(BigInt(stats.usdcVolumeBaseUnits || '0'))} USDC` },
             { label: 'ZMW Volume', value: formatZMW(stats.zmwVolume) },
             { label: 'Pending', value: stats.pendingCount },
             { label: 'Failed', value: stats.failedCount },
@@ -55,7 +57,9 @@ export default async function AdminPage() {
                   <div>
                     <span className="capitalize">{tx.type}</span>
                     <span className="ml-2 text-muted-foreground">
-                      {formatSats(tx.amount_sats)}
+                      {tx.asset === 'usdc'
+                        ? `${formatUsdcFromBaseUnits(BigInt(tx.amount_usdc_base_units || '0'))} USDC`
+                        : formatSats(tx.amount_sats)}
                     </span>
                   </div>
                   <Badge variant="outline" className="capitalize">

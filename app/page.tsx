@@ -40,8 +40,8 @@ export default function LandingPage() {
               <span className="text-emerald-600">Zambia</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Buy, send, receive and spend Bitcoin through Lightning using a simple
-              Zambian wallet.
+              Buy, send, receive and spend Bitcoin through Lightning, and hold USDC on
+              Circle&apos;s Arc network, in a simple Zambian wallet.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <LinkButton size="lg" href="/signup" className="h-12 bg-emerald-600 px-8 hover:bg-emerald-700">
@@ -62,8 +62,8 @@ export default function LandingPage() {
               DEMO MODE
             </h2>
             <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-              This is a demonstration application. No real money or Bitcoin is being
-              transferred. All payment methods are planned integrations.
+              This is a demonstration application. No real money, Bitcoin, or USDC is
+              being transferred. All payment methods are planned integrations.
             </p>
           </div>
         </section>

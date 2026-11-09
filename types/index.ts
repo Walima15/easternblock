@@ -2,6 +2,8 @@ export type KycStatus = 'not_started' | 'pending' | 'verified' | 'rejected';
 
 export type TransactionType = 'buy' | 'sell' | 'send' | 'receive';
 
+export type Asset = 'btc' | 'usdc';
+
 export type TransactionStatus =
   | 'pending'
   | 'processing'
@@ -40,6 +42,10 @@ export interface Wallet {
   wallet_type: 'lightning';
   lightning_address: string;
   balance_sats: number;
+  /** Arc address that holds this person's USDC. */
+  arc_address: string;
+  /** USDC balance in ERC-20 base units (6 decimals), stored as a decimal string. */
+  arc_balance_base_units: string;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +64,15 @@ export interface Transaction {
   sender: string | null;
   memo: string | null;
   external_reference: string | null;
+  /** Missing on older Bitcoin rows. Treat anything other than usdc as Bitcoin. */
+  asset?: Asset;
+  /** USDC amount in 6-decimal base units. Null on Bitcoin rows. */
+  amount_usdc_base_units?: string | null;
+  /** Network fee in 6-decimal base units, when the row is a USDC send. */
+  fee_usdc_base_units?: string | null;
+  tx_hash?: string | null;
+  /** Set for Arc testnet transactions. Mock rows leave this empty. */
+  explorer_url?: string | null;
   created_at: string;
   updated_at: string;
 }
