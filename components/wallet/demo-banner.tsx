@@ -6,7 +6,7 @@ export function DemoBanner() {
       <div className="flex items-center justify-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-200">
         <AlertTriangle className="h-4 w-4 shrink-0" />
         <span>
-          <strong>DEMO MODE</strong> — No real money or Bitcoin is being transferred.
+          <strong>DEMO MODE</strong> — No real money, Bitcoin, or USDC is being transferred.
         </span>
       </div>
     </div>

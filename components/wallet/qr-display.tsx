@@ -8,9 +8,10 @@ import { toast } from 'sonner';
 interface QrDisplayProps {
   value: string;
   label?: string;
+  shareTitle?: string;
 }
 
-export function QrDisplay({ value, label }: QrDisplayProps) {
+export function QrDisplay({ value, label, shareTitle = 'EasternBlock Lightning' }: QrDisplayProps) {
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(value);
     toast.success('Copied to clipboard');
@@ -18,7 +19,7 @@ export function QrDisplay({ value, label }: QrDisplayProps) {
 
   const share = async () => {
     if (navigator.share) {
-      await navigator.share({ title: 'EasternBlock Lightning', text: value });
+      await navigator.share({ title: shareTitle, text: value });
     } else {
       await copyToClipboard();
     }

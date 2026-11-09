@@ -3,6 +3,8 @@ import { join } from 'path';
 import { scryptSync, randomBytes, timingSafeEqual } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import type { Payment, Profile, Transaction, Wallet } from '@/types';
+import { getArcMode } from '@/lib/arc/constants';
+import { mockArcAddressForUser, generateTestnetKeypair } from '@/lib/arc/keys';
 
 const DATA_DIR = join(process.cwd(), 'data');
 const DB_PATH = join(DATA_DIR, 'demo-db.json');
@@ -33,6 +35,13 @@ interface AuditLog {
   created_at: string;
 }
 
+/** Demo testnet signing key. Never send this to the browser. */
+interface ArcKeyRecord {
+  user_id: string;
+  address: string;
+  private_key: string;
+}
+
 interface DemoDatabase {
   users: DemoUser[];
   profiles: Profile[];
@@ -41,6 +50,7 @@ interface DemoDatabase {
   payments: Payment[];
   idempotency_keys: IdempotencyRecord[];
   audit_logs: AuditLog[];
+  arc_keys: ArcKeyRecord[];
 }
 
 function emptyDb(): DemoDatabase {
@@ -52,6 +62,7 @@ function emptyDb(): DemoDatabase {
     payments: [],
     idempotency_keys: [],
     audit_logs: [],
+    arc_keys: [],
   };
 }
 
@@ -62,7 +73,9 @@ function readDb(): DemoDatabase {
     writeDb(db);
     return db;
   }
-  return JSON.parse(readFileSync(DB_PATH, 'utf-8')) as DemoDatabase;
+  const db = JSON.parse(readFileSync(DB_PATH, 'utf-8')) as DemoDatabase;
+  if (!db.arc_keys) db.arc_keys = [];
+  return db;
 }
 
 function writeDb(db: DemoDatabase) {
@@ -92,6 +105,43 @@ function lightningUsername(email: string) {
   return email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
 }
 
+function createArcAccount(userId: string): { address: string; privateKey: string | null } {
+  if (getArcMode() === 'testnet') {
+    const account = generateTestnetKeypair();
+    return { address: account.address, privateKey: account.privateKey };
+  }
+  return { address: mockArcAddressForUser(userId), privateKey: null };
+}
+
+/** Fill in an Arc address for wallets created before USDC support. Returns true when the file should be saved. */
+function attachArcWallet(db: DemoDatabase, wallet: Wallet, userId: string): boolean {
+  let changed = false;
+  if (!db.arc_keys) db.arc_keys = [];
+  if (wallet.arc_balance_base_units == null || wallet.arc_balance_base_units === '') {
+    wallet.arc_balance_base_units = '0';
+    changed = true;
+  }
+
+  if (getArcMode() === 'testnet') {
+    let key = db.arc_keys.find((entry) => entry.user_id === userId);
+    if (!key) {
+      const account = generateTestnetKeypair();
+      key = { user_id: userId, address: account.address, private_key: account.privateKey };
+      db.arc_keys.push(key);
+      wallet.arc_address = account.address;
+      changed = true;
+    } else if (wallet.arc_address !== key.address) {
+      wallet.arc_address = key.address;
+      changed = true;
+    }
+  } else if (!wallet.arc_address) {
+    wallet.arc_address = mockArcAddressForUser(userId);
+    changed = true;
+  }
+
+  return changed;
+}
+
 export function createUser(email: string, password: string, fullName: string) {
   const db = readDb();
   if (db.users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
@@ -102,6 +152,7 @@ export function createUser(email: string, password: string, fullName: string) {
   const profileId = uuidv4();
   const walletId = uuidv4();
   const timestamp = now();
+  const arc = createArcAccount(userId);
 
   db.users.push({ id: userId, email: email.toLowerCase(), password_hash: hashPassword(password) });
   db.profiles.push({
@@ -120,9 +171,14 @@ export function createUser(email: string, password: string, fullName: string) {
     wallet_type: 'lightning',
     lightning_address: `${lightningUsername(email)}@easternblock.app`,
     balance_sats: 0,
+    arc_address: arc.address,
+    arc_balance_base_units: '0',
     created_at: timestamp,
     updated_at: timestamp,
   });
+  if (arc.privateKey) {
+    db.arc_keys.push({ user_id: userId, address: arc.address, private_key: arc.privateKey });
+  }
 
   writeDb(db);
   return { userId };
@@ -163,7 +219,27 @@ export function updateProfile(
 }
 
 export function getWallet(userId: string) {
-  return readDb().wallets.find((w) => w.user_id === userId) ?? null;
+  const db = readDb();
+  const wallet =
+    db.wallets.find((w) => w.user_id === userId && w.wallet_type === 'lightning') ??
+    db.wallets.find((w) => w.user_id === userId);
+  if (!wallet) return null;
+  if (attachArcWallet(db, wallet, userId)) {
+    wallet.updated_at = now();
+    writeDb(db);
+  }
+  return wallet;
+}
+
+export function getWalletByArcAddress(address: string) {
+  const normalized = address.toLowerCase();
+  return readDb().wallets.find((w) => w.arc_address?.toLowerCase() === normalized) ?? null;
+}
+
+/** Server-side only. Do not return this from a server action. */
+export function getArcSigningKey(userId: string): string | null {
+  const db = readDb();
+  return db.arc_keys.find((entry) => entry.user_id === userId)?.private_key ?? null;
 }
 
 export function updateWalletBalance(walletId: string, balanceSats: number) {
@@ -175,12 +251,26 @@ export function updateWalletBalance(walletId: string, balanceSats: number) {
   writeDb(db);
 }
 
+export function updateArcBalance(walletId: string, balanceBaseUnits: string) {
+  const db = readDb();
+  const wallet = db.wallets.find((w) => w.id === walletId);
+  if (!wallet) return;
+  wallet.arc_balance_base_units = balanceBaseUnits;
+  wallet.updated_at = now();
+  writeDb(db);
+}
+
 export function createTransaction(
   data: Omit<Transaction, 'id' | 'created_at' | 'updated_at'>
 ) {
   const db = readDb();
   const transaction: Transaction = {
     ...data,
+    asset: data.asset ?? 'btc',
+    amount_usdc_base_units: data.amount_usdc_base_units ?? null,
+    fee_usdc_base_units: data.fee_usdc_base_units ?? null,
+    tx_hash: data.tx_hash ?? null,
+    explorer_url: data.explorer_url ?? null,
     id: uuidv4(),
     created_at: now(),
     updated_at: now(),
@@ -227,12 +317,17 @@ export function updatePaymentByTransactionId(
   return payment;
 }
 
-export function getTransactions(userId: string, type?: string) {
+export function getTransactions(userId: string, type?: string, asset?: string) {
   let txs = readDb()
     .transactions.filter((t) => t.user_id === userId)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
   if (type && type !== 'all') {
     txs = txs.filter((t) => t.type === type);
+  }
+  if (asset === 'usdc') {
+    txs = txs.filter((t) => t.asset === 'usdc');
+  } else if (asset === 'btc') {
+    txs = txs.filter((t) => t.asset !== 'usdc');
   }
   return txs;
 }
@@ -304,7 +399,13 @@ export function getAdminStats() {
   return {
     totalUsers: db.profiles.length,
     totalTransactions: all.length,
-    btcVolumeSats: completed.reduce((sum, t) => sum + t.amount_sats, 0),
+    btcVolumeSats: completed
+      .filter((t) => t.asset !== 'usdc')
+      .reduce((sum, t) => sum + t.amount_sats, 0),
+    usdcVolumeBaseUnits: completed
+      .filter((t) => t.asset === 'usdc')
+      .reduce((sum, t) => sum + BigInt(t.amount_usdc_base_units || '0'), 0n)
+      .toString(),
     zmwVolume: completed.reduce((sum, t) => sum + (Number(t.amount_zmw) || 0), 0),
     pendingCount: pending.length,
     failedCount: failed.length,

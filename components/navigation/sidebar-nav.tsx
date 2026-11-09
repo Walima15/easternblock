@@ -11,6 +11,8 @@ import {
   Settings,
   Shield,
   History,
+  CircleDollarSign,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +22,12 @@ const navItems = [
   { href: '/sell', label: 'Sell Bitcoin', icon: ArrowDownLeft },
   { href: '/send', label: 'Send', icon: Send },
   { href: '/receive', label: 'Receive', icon: QrCode },
+  { href: '/usdc/buy', label: 'Buy USDC', icon: CircleDollarSign },
+  { href: '/usdc/sell', label: 'Sell USDC', icon: ArrowDownLeft },
+  { href: '/usdc/send', label: 'Send USDC', icon: Send },
+  { href: '/usdc/receive', label: 'Receive USDC', icon: QrCode },
   { href: '/transactions', label: 'Transactions', icon: History },
+  { href: '/about-arc', label: 'About Arc', icon: BookOpen },
   { href: '/settings', label: 'Settings', icon: Settings },
   { href: '/kyc', label: 'KYC', icon: Shield },
 ];
@@ -29,7 +36,7 @@ export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
+    <aside className="hidden w-64 shrink-0 overflow-y-auto border-r bg-card md:sticky md:top-0 md:block md:h-screen">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/dashboard" className="text-xl font-bold tracking-tight">
           <span className="text-emerald-600">Eastern</span>Block

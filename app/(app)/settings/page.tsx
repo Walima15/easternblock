@@ -30,9 +30,13 @@ export default async function SettingsPage() {
             <CardTitle className="text-base">Wallet</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Lightning address</span>
               <span className="font-mono text-xs">{wallet?.lightning_address}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Arc address (USDC)</span>
+              <p className="mt-1 break-all font-mono text-xs">{wallet?.arc_address}</p>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Country</span>

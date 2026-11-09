@@ -1,6 +1,19 @@
 export type WalletActionResult =
   | { error: string }
-  | { success: true; duplicate?: boolean; amountSats?: number; amountZmw?: number; newBalance?: number; transactionId?: string; externalReference?: string; message?: string }
+  | {
+      success: true;
+      duplicate?: boolean;
+      amountSats?: number;
+      amountZmw?: number;
+      amountUsdc?: string;
+      feeUsdc?: string;
+      newBalance?: number;
+      newUsdcBalance?: string;
+      transactionId?: string;
+      externalReference?: string;
+      explorerUrl?: string | null;
+      message?: string;
+    }
   | { success: false; pending?: boolean; error?: string; message?: string; transactionId?: string };
 
 export function isWalletError(
