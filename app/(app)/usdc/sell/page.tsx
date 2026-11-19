@@ -1,4 +1,5 @@
 import { AppHeader } from '@/components/navigation/sidebar-nav';
+import { AssetSwitcher } from '@/components/wallet/asset-switcher';
 import { SellUsdcForm } from '@/components/arc/sell-usdc-form';
 import { getUsdcSellQuote, getUsdcSnapshot } from '@/lib/actions/arc';
 
@@ -7,8 +8,9 @@ export default async function SellUsdcPage() {
 
   return (
     <div>
-      <AppHeader title="Sell USDC" />
+      <AppHeader title="Cash out" />
       <div className="mx-auto max-w-lg space-y-6 p-4 md:max-w-xl md:p-6">
+        <AssetSwitcher flow="sell" asset="usdc" />
         <SellUsdcForm
           balanceUsdc={snapshot.balanceUsdc}
           mode={snapshot.mode}

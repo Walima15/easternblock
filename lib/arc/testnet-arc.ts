@@ -132,7 +132,7 @@ export function createViemArcChain(options?: {
 }): ArcChainPort {
   if (arcTestnet.id !== ARC_TESTNET_CHAIN_ID) {
     throw new Error(
-      `viem arcTestnet id ${arcTestnet.id} does not match the docs.arc.io chain id ${ARC_TESTNET_CHAIN_ID}.`
+      `viem arcTestnet id ${arcTestnet.id} does not match the docs.arc.network chain id ${ARC_TESTNET_CHAIN_ID}.`
     );
   }
 

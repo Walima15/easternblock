@@ -1,6 +1,6 @@
 export type KycStatus = 'not_started' | 'pending' | 'verified' | 'rejected';
 
-export type TransactionType = 'buy' | 'sell' | 'send' | 'receive';
+export type TransactionType = 'buy' | 'sell' | 'send' | 'receive' | 'swap';
 
 export type Asset = 'btc' | 'usdc';
 
@@ -73,6 +73,10 @@ export interface Transaction {
   tx_hash?: string | null;
   /** Set for Arc testnet transactions. Mock rows leave this empty. */
   explorer_url?: string | null;
+  /** The asset given up on a swap or rebalance. */
+  counter_asset?: Asset | null;
+  counter_sats?: number | null;
+  counter_usdc_base_units?: string | null;
   created_at: string;
   updated_at: string;
 }

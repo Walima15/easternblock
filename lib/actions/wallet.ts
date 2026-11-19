@@ -61,7 +61,7 @@ export async function buyBitcoin(input: unknown): Promise<WalletActionResult> {
     return (idempotency.response as WalletActionResult) ?? { success: true, duplicate: true };
   }
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const btcPrice = await getBTCZMWPrice();
@@ -69,7 +69,7 @@ export async function buyBitcoin(input: unknown): Promise<WalletActionResult> {
   const netZmw = parsed.data.amountZmw - feeZmw;
   const amountSats = convertZMWToSats(netZmw, btcPrice);
 
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'buy',
@@ -93,7 +93,7 @@ export async function buyBitcoin(input: unknown): Promise<WalletActionResult> {
     simulatePending: parsed.data.simulatePending,
   });
 
-  createPayment({
+  await createPayment({
     user_id: userId,
     transaction_id: transaction.id,
     provider: parsed.data.provider,
@@ -104,7 +104,7 @@ export async function buyBitcoin(input: unknown): Promise<WalletActionResult> {
     phone_number: parsed.data.phoneNumber ?? null,
   });
 
-  updateTransaction(transaction.id, { status: 'processing' });
+  await updateTransaction(transaction.id, { status: 'processing' });
 
   const statusResult = await provider.checkPaymentStatus(initResult.providerReference);
 
@@ -121,8 +121,8 @@ export async function buyBitcoin(input: unknown): Promise<WalletActionResult> {
   }
 
   if (statusResult.status === 'failed') {
-    updateTransaction(transaction.id, { status: 'failed' });
-    updatePaymentByTransactionId(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
+    await updatePaymentByTransactionId(transaction.id, { status: 'failed' });
     const response = {
       success: false as const,
       error: 'Payment failed. Please try again.',
@@ -134,12 +134,12 @@ export async function buyBitcoin(input: unknown): Promise<WalletActionResult> {
   }
 
   const newBalance = wallet.balance_sats + amountSats;
-  updateWalletBalance(wallet.id, newBalance);
-  updateTransaction(transaction.id, {
+  await updateWalletBalance(wallet.id, newBalance);
+  await updateTransaction(transaction.id, {
     status: 'completed',
     external_reference: initResult.providerReference,
   });
-  updatePaymentByTransactionId(transaction.id, { status: 'completed' });
+  await updatePaymentByTransactionId(transaction.id, { status: 'completed' });
 
   await logAuditEvent({
     userId,
@@ -181,7 +181,7 @@ export async function sellBitcoin(input: unknown): Promise<WalletActionResult> {
     return (idempotency.response as WalletActionResult) ?? { success: true, duplicate: true };
   }
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
   if (wallet.balance_sats < parsed.data.amountSats) {
     return { error: 'Insufficient balance' };
@@ -190,7 +190,7 @@ export async function sellBitcoin(input: unknown): Promise<WalletActionResult> {
   const btcPrice = await getBTCZMWPrice();
   const amountZmw = convertSatsToZMW(parsed.data.amountSats, btcPrice);
 
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'sell',
@@ -205,10 +205,10 @@ export async function sellBitcoin(input: unknown): Promise<WalletActionResult> {
     external_reference: null,
   });
 
-  updateTransaction(transaction.id, { status: 'processing' });
+  await updateTransaction(transaction.id, { status: 'processing' });
 
   if (parsed.data.simulateFailure) {
-    updateTransaction(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
     const response = {
       success: false as const,
       error: 'Sale failed. Please try again.',
@@ -219,8 +219,8 @@ export async function sellBitcoin(input: unknown): Promise<WalletActionResult> {
   }
 
   const newBalance = wallet.balance_sats - parsed.data.amountSats;
-  updateWalletBalance(wallet.id, newBalance);
-  updateTransaction(transaction.id, { status: 'completed' });
+  await updateWalletBalance(wallet.id, newBalance);
+  await updateTransaction(transaction.id, { status: 'completed' });
 
   await logAuditEvent({
     userId,
@@ -263,7 +263,7 @@ export async function sendBitcoin(input: unknown): Promise<WalletActionResult> {
     return (idempotency.response as WalletActionResult) ?? { success: true, duplicate: true };
   }
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const feeSats = calculateLightningFeeSats(parsed.data.amountSats);
@@ -273,7 +273,7 @@ export async function sendBitcoin(input: unknown): Promise<WalletActionResult> {
     return { error: 'Insufficient balance' };
   }
 
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'send',
@@ -288,7 +288,7 @@ export async function sendBitcoin(input: unknown): Promise<WalletActionResult> {
     external_reference: null,
   });
 
-  updateTransaction(transaction.id, { status: 'processing' });
+  await updateTransaction(transaction.id, { status: 'processing' });
 
   mockLightningService.setBalance(wallet.balance_sats);
   let paymentResult;
@@ -305,7 +305,7 @@ export async function sendBitcoin(input: unknown): Promise<WalletActionResult> {
       parsed.data.memo
     );
   } else {
-    updateTransaction(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
     return { error: 'Invalid Lightning invoice or address' };
   }
 
@@ -319,7 +319,7 @@ export async function sendBitcoin(input: unknown): Promise<WalletActionResult> {
   }
 
   if (!paymentResult.success) {
-    updateTransaction(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
     const response = {
       success: false as const,
       error: paymentResult.error ?? 'Payment failed. Please try again.',
@@ -331,8 +331,8 @@ export async function sendBitcoin(input: unknown): Promise<WalletActionResult> {
   }
 
   const newBalance = wallet.balance_sats - totalSats;
-  updateWalletBalance(wallet.id, newBalance);
-  updateTransaction(transaction.id, {
+  await updateWalletBalance(wallet.id, newBalance);
+  await updateTransaction(transaction.id, {
     status: 'completed',
     external_reference: paymentResult.transactionId,
   });
@@ -366,7 +366,7 @@ export async function createReceiveInvoice(input: unknown) {
   }
 
   const userId = await requireSessionUserId();
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const amountSats = parsed.data.amountSats ?? 0;
@@ -396,7 +396,7 @@ export async function simulateReceiveBitcoin(input: {
   idempotencyKey: string;
 }): Promise<WalletActionResult> {
   const userId = await requireSessionUserId();
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const idempotency = await checkIdempotency(userId, input.idempotencyKey, 'receive');
@@ -404,7 +404,7 @@ export async function simulateReceiveBitcoin(input: {
     return (idempotency.response as WalletActionResult) ?? { success: true, duplicate: true };
   }
 
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'receive',
@@ -422,8 +422,8 @@ export async function simulateReceiveBitcoin(input: {
   await new Promise((r) => setTimeout(r, 1000));
 
   const newBalance = wallet.balance_sats + input.amountSats;
-  updateWalletBalance(wallet.id, newBalance);
-  updateTransaction(transaction.id, {
+  await updateWalletBalance(wallet.id, newBalance);
+  await updateTransaction(transaction.id, {
     status: 'completed',
     external_reference: uuidv4(),
   });
@@ -461,8 +461,8 @@ export async function getSendQuote(amountSats: number) {
 
 export async function getAdminStats() {
   const userId = await requireSessionUserId();
-  const profile = getProfile(userId);
+  const profile = await getProfile(userId);
   const isAdmin = profile?.full_name?.toLowerCase().includes('admin');
   if (!isAdmin) return null;
-  return getAdminStatsFromStore();
+  return await getAdminStatsFromStore();
 }

@@ -31,7 +31,7 @@ export async function logAuditEvent(params: {
   metadata?: Record<string, unknown>;
 }) {
   try {
-    addAuditLog({
+    await addAuditLog({
       userId: params.userId,
       action: params.action,
       resourceType: params.resourceType,

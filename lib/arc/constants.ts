@@ -1,7 +1,9 @@
 /**
- * Arc network facts checked against docs.arc.io on 9 Nov 2026:
+ * Arc network facts checked against https://docs.arc.network on 19 Nov 2026
+ * (the docs index resolves to docs.arc.io):
  * - https://docs.arc.io/arc/references/connect-to-arc
  * - https://docs.arc.io/arc/references/contract-addresses
+ * - https://docs.arc.io/arc/references/evm-differences
  *
  * Native gas USDC uses 18 decimals. The ERC-20 interface uses 6.
  * They are the same balance. This app shows the 6-decimal figure only.

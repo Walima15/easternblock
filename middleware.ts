@@ -7,6 +7,7 @@ const protectedRoutes = [
   '/send',
   '/receive',
   '/transactions',
+  '/swap',
   '/settings',
   '/kyc',
   '/admin',

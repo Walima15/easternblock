@@ -2,6 +2,8 @@ import { DemoBanner } from '@/components/wallet/demo-banner';
 import { SidebarNav } from '@/components/navigation/sidebar-nav';
 import { MobileNav } from '@/components/navigation/mobile-nav';
 
+export const dynamic = 'force-dynamic';
+
 export default function AppLayout({ children }: LayoutProps<'/'>) {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">

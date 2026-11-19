@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
 import { getArcService } from '@/lib/arc/arc-service';
+import { generateTestnetKeypair } from '@/lib/arc/keys';
 import { validateArcRecipient, normalizeArcAddress } from '@/lib/arc/address';
 import { getArcMode } from '@/lib/arc/constants';
 import { MockArcService } from '@/lib/arc/mock-arc';
@@ -34,6 +35,7 @@ import {
   getArcSigningKey,
   getWallet,
   getWalletByArcAddress,
+  saveArcKey,
   updateArcBalance,
   updatePaymentByTransactionId,
   updateTransaction,
@@ -62,7 +64,7 @@ async function remembered(
 
 export async function getUsdcSnapshot() {
   const userId = await requireSessionUserId();
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   const quote = await getUsdZmwQuote();
   const mode = getArcMode();
   let baseUnits = parseBaseUnits(wallet?.arc_balance_base_units);
@@ -173,7 +175,7 @@ export async function getUsdcSendQuote(amountUsdc: string, recipient?: string): 
   if (amountError) return { ok: false, error: amountError };
 
   const userId = await requireSessionUserId();
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { ok: false, error: 'Wallet not found' };
   if (recipient) {
     const recipientError = validateArcRecipient(recipient, wallet.arc_address);
@@ -215,11 +217,11 @@ export async function buyUsdc(input: unknown): Promise<WalletActionResult> {
   const rememberedResult = await remembered(userId, parsed.data.idempotencyKey, 'buy_usdc');
   if (rememberedResult) return rememberedResult;
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const mode = getArcMode();
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'buy',
@@ -245,7 +247,7 @@ export async function buyUsdc(input: unknown): Promise<WalletActionResult> {
     simulatePending: parsed.data.simulatePending,
   });
 
-  createPayment({
+  await createPayment({
     user_id: userId,
     transaction_id: transaction.id,
     provider: parsed.data.provider,
@@ -256,7 +258,7 @@ export async function buyUsdc(input: unknown): Promise<WalletActionResult> {
     phone_number: parsed.data.phoneNumber ?? null,
   });
 
-  updateTransaction(transaction.id, { status: 'processing' });
+  await updateTransaction(transaction.id, { status: 'processing' });
   const statusResult = await provider.checkPaymentStatus(initResult.providerReference);
 
   if (statusResult.status === 'pending') {
@@ -272,8 +274,8 @@ export async function buyUsdc(input: unknown): Promise<WalletActionResult> {
   }
 
   if (statusResult.status === 'failed') {
-    updateTransaction(transaction.id, { status: 'failed' });
-    updatePaymentByTransactionId(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
+    await updatePaymentByTransactionId(transaction.id, { status: 'failed' });
     const response: WalletActionResult = {
       success: false,
       error: 'Payment failed. Please try again.',
@@ -290,7 +292,7 @@ export async function buyUsdc(input: unknown): Promise<WalletActionResult> {
     service.setBalance(wallet.arc_address, parseBaseUnits(wallet.arc_balance_base_units));
     const received = await service.receiveUsdc(wallet.arc_address, BigInt(quote.amountBaseUnits));
     if (!received.success || received.balanceBaseUnits == null) {
-      updateTransaction(transaction.id, { status: 'failed' });
+      await updateTransaction(transaction.id, { status: 'failed' });
       const response: WalletActionResult = {
         success: false,
         error: received.error ?? 'Could not credit USDC.',
@@ -299,15 +301,15 @@ export async function buyUsdc(input: unknown): Promise<WalletActionResult> {
       await completeIdempotency(userId, parsed.data.idempotencyKey, transaction.id, response);
       return response;
     }
-    updateArcBalance(wallet.id, received.balanceBaseUnits.toString());
+    await updateArcBalance(wallet.id, received.balanceBaseUnits.toString());
     newUsdcBalance = formatUsdcFromBaseUnits(received.balanceBaseUnits);
   }
 
-  updateTransaction(transaction.id, {
+  await updateTransaction(transaction.id, {
     status: 'completed',
     external_reference: initResult.providerReference,
   });
-  updatePaymentByTransactionId(transaction.id, { status: 'completed' });
+  await updatePaymentByTransactionId(transaction.id, { status: 'completed' });
 
   await logAuditEvent({
     userId,
@@ -354,7 +356,7 @@ export async function sellUsdc(input: unknown): Promise<WalletActionResult> {
   const rememberedResult = await remembered(userId, parsed.data.idempotencyKey, 'sell_usdc');
   if (rememberedResult) return rememberedResult;
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const mode = getArcMode();
@@ -383,7 +385,7 @@ export async function sellUsdc(input: unknown): Promise<WalletActionResult> {
     }
   }
 
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'sell',
@@ -400,7 +402,7 @@ export async function sellUsdc(input: unknown): Promise<WalletActionResult> {
     amount_usdc_base_units: quote.amountBaseUnits,
   });
 
-  updateTransaction(transaction.id, { status: 'processing' });
+  await updateTransaction(transaction.id, { status: 'processing' });
 
   const provider = getPaymentProvider(parsed.data.provider);
   const initResult = await provider.initializePayment({
@@ -411,7 +413,7 @@ export async function sellUsdc(input: unknown): Promise<WalletActionResult> {
     simulatePending: parsed.data.simulatePending,
   });
 
-  createPayment({
+  await createPayment({
     user_id: userId,
     transaction_id: transaction.id,
     provider: parsed.data.provider,
@@ -437,8 +439,8 @@ export async function sellUsdc(input: unknown): Promise<WalletActionResult> {
   }
 
   if (statusResult.status === 'failed') {
-    updateTransaction(transaction.id, { status: 'failed' });
-    updatePaymentByTransactionId(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
+    await updatePaymentByTransactionId(transaction.id, { status: 'failed' });
     const response: WalletActionResult = {
       success: false,
       error: 'Payout failed. Your USDC was not sold.',
@@ -452,15 +454,15 @@ export async function sellUsdc(input: unknown): Promise<WalletActionResult> {
   let newUsdcBalance = formatUsdcFromBaseUnits(parseBaseUnits(wallet.arc_balance_base_units));
   if (mode === 'mock') {
     const next = parseBaseUnits(wallet.arc_balance_base_units) - BigInt(quote.amountBaseUnits);
-    updateArcBalance(wallet.id, next.toString());
+    await updateArcBalance(wallet.id, next.toString());
     newUsdcBalance = formatUsdcFromBaseUnits(next);
   }
 
-  updateTransaction(transaction.id, {
+  await updateTransaction(transaction.id, {
     status: 'completed',
     external_reference: initResult.providerReference,
   });
-  updatePaymentByTransactionId(transaction.id, { status: 'completed' });
+  await updatePaymentByTransactionId(transaction.id, { status: 'completed' });
 
   await logAuditEvent({
     userId,
@@ -501,7 +503,7 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
   const rateLimit = await checkRateLimit(`send-usdc:${userId}`);
   if (!rateLimit.allowed) return { error: 'Too many requests. Please wait.' };
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const recipientError = validateArcRecipient(parsed.data.recipient, wallet.arc_address);
@@ -516,7 +518,7 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
 
   const mode = getArcMode();
   const quote = await getUsdZmwQuote();
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'send',
@@ -533,10 +535,10 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
     amount_usdc_base_units: amountBaseUnits.toString(),
   });
 
-  updateTransaction(transaction.id, { status: 'processing' });
+  await updateTransaction(transaction.id, { status: 'processing' });
 
   if (parsed.data.simulateFailure) {
-    updateTransaction(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
     const response: WalletActionResult = {
       success: false,
       error: 'Transfer failed (demo).',
@@ -555,7 +557,7 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
         parseBaseUnits(wallet.arc_balance_base_units)
       );
     }
-    const privateKey = mode === 'testnet' ? getArcSigningKey(userId) ?? undefined : undefined;
+    const privateKey = mode === 'testnet' ? await getArcSigningKey(userId) ?? undefined : undefined;
     const result = await service.sendUsdc({
       fromAddress: wallet.arc_address,
       toAddress: parsed.data.recipient,
@@ -565,7 +567,7 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
     });
 
     if (!result.success || result.balanceBaseUnits == null) {
-      updateTransaction(transaction.id, {
+      await updateTransaction(transaction.id, {
         status: 'failed',
         tx_hash: result.txHash ?? null,
         explorer_url: result.txHash ? service.explorerTxUrl(result.txHash) : null,
@@ -581,12 +583,12 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
     }
 
     if (service.mode === 'mock') {
-      updateArcBalance(wallet.id, result.balanceBaseUnits.toString());
-      const recipientWallet = getWalletByArcAddress(parsed.data.recipient);
+      await updateArcBalance(wallet.id, result.balanceBaseUnits.toString());
+      const recipientWallet = await getWalletByArcAddress(parsed.data.recipient);
       if (recipientWallet && recipientWallet.id !== wallet.id) {
         const credited = parseBaseUnits(recipientWallet.arc_balance_base_units) + amountBaseUnits;
-        updateArcBalance(recipientWallet.id, credited.toString());
-        createTransaction({
+        await updateArcBalance(recipientWallet.id, credited.toString());
+        await createTransaction({
           user_id: recipientWallet.user_id,
           wallet_id: recipientWallet.id,
           type: 'receive',
@@ -607,7 +609,7 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
     }
 
     const explorerUrl = result.txHash ? service.explorerTxUrl(result.txHash) : null;
-    updateTransaction(transaction.id, {
+    await updateTransaction(transaction.id, {
       status: 'completed',
       external_reference: result.txHash ?? null,
       tx_hash: result.txHash ?? null,
@@ -641,7 +643,7 @@ export async function sendUsdc(input: unknown): Promise<WalletActionResult> {
     revalidateUsdc();
     return response;
   } catch {
-    updateTransaction(transaction.id, { status: 'failed' });
+    await updateTransaction(transaction.id, { status: 'failed' });
     const response: WalletActionResult = {
       success: false,
       error: 'Could not reach Arc. Please try again.',
@@ -677,7 +679,7 @@ export async function simulateReceiveUsdc(input: unknown): Promise<WalletActionR
   const rememberedResult = await remembered(userId, parsed.data.idempotencyKey, 'receive_usdc');
   if (rememberedResult) return rememberedResult;
 
-  const wallet = getWallet(userId);
+  const wallet = await getWallet(userId);
   if (!wallet) return { error: 'Wallet not found' };
 
   const service = new MockArcService();
@@ -689,9 +691,9 @@ export async function simulateReceiveUsdc(input: unknown): Promise<WalletActionR
     return response;
   }
 
-  updateArcBalance(wallet.id, received.balanceBaseUnits.toString());
+  await updateArcBalance(wallet.id, received.balanceBaseUnits.toString());
   const quote = await getUsdZmwQuote();
-  const transaction = createTransaction({
+  const transaction = await createTransaction({
     user_id: userId,
     wallet_id: wallet.id,
     type: 'receive',
@@ -726,4 +728,17 @@ export async function simulateReceiveUsdc(input: unknown): Promise<WalletActionR
   await completeIdempotency(userId, parsed.data.idempotencyKey, transaction.id, response);
   revalidateUsdc();
   return response;
+}
+
+/** Create a demo testnet signing key once. Mock mode does not need one. */
+export async function ensureArcAccount() {
+  if (getArcMode() !== 'testnet') return { ok: true as const };
+  const userId = await requireSessionUserId();
+  const existing = await getArcSigningKey(userId);
+  if (existing) return { ok: true as const };
+  const account = generateTestnetKeypair();
+  const saved = await saveArcKey(userId, account.address, account.privateKey);
+  if ('error' in saved) return { error: saved.error };
+  revalidateUsdc();
+  return { ok: true as const, address: saved.address };
 }

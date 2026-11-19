@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { login } from '@/lib/actions/auth';
+import { refreshBrowserBackup } from '@/components/demo/browser-backup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ export function LoginForm() {
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
+    await refreshBrowserBackup();
     const result = await login(formData);
     if (result?.error) {
       setError(result.error);

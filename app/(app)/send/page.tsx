@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AppHeader } from '@/components/navigation/sidebar-nav';
+import { AssetSwitcher } from '@/components/wallet/asset-switcher';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,8 +54,9 @@ export default function SendPage() {
 
   return (
     <div>
-      <AppHeader title="Send Bitcoin" />
+      <AppHeader title="Send" />
       <div className="mx-auto max-w-lg space-y-6 p-4 md:max-w-xl md:p-6">
+        <AssetSwitcher flow="send" asset="btc" />
         {step === 'form' && (
           <>
             <div className="space-y-2">

@@ -83,7 +83,7 @@ export default function AboutArcPage() {
           <CardContent className="space-y-2 p-6 text-sm">
             <h2 className="text-lg font-semibold">Network details</h2>
             <p className="text-muted-foreground">
-              Checked against docs.arc.io on 9 Nov 2026. The demo sends on testnet only when ARC_MODE=testnet.
+              Checked against docs.arc.network on 19 Nov 2026. The demo sends on testnet only when ARC_MODE=testnet.
             </p>
             <dl className="space-y-2 pt-2">
               <div>

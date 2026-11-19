@@ -36,12 +36,13 @@ export default function LandingPage() {
               🇿🇲 Built for Zambia
             </div>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-              Bitcoin made simple for{' '}
+              USDC made simple for{' '}
               <span className="text-emerald-600">Zambia</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Buy, send, receive and spend Bitcoin through Lightning, and hold USDC on
-              Circle&apos;s Arc network, in a simple Zambian wallet.
+              Digital dollars on Circle&apos;s Arc network, with Bitcoin on Lightning included
+              in the same wallet. Cash in and out with mobile money, and keep a 50/50 split
+              when you want one.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <LinkButton size="lg" href="/signup" className="h-12 bg-emerald-600 px-8 hover:bg-emerald-700">
@@ -62,8 +63,8 @@ export default function LandingPage() {
               DEMO MODE
             </h2>
             <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-              This is a demonstration application. No real money, Bitcoin, or USDC is
-              being transferred. All payment methods are planned integrations.
+              This is a demonstration application. No real USDC, Bitcoin, or kwacha is
+              being transferred. Mobile money and card payments are simulated.
             </p>
           </div>
         </section>
@@ -76,26 +77,26 @@ export default function LandingPage() {
               {[
                 {
                   step: '1',
-                  title: 'Add ZMW',
-                  desc: 'Choose a supported payment method.',
+                  title: 'Add kwacha',
+                  desc: 'MTN, Airtel, Zamtel, bank, or card. Demo payments.',
                   icon: Smartphone,
                 },
                 {
                   step: '2',
-                  title: 'Buy Bitcoin',
-                  desc: 'Convert ZMW into Bitcoin.',
+                  title: 'Hold USDC',
+                  desc: 'Digital dollars on Arc, bought with kwacha.',
                   icon: Zap,
                 },
                 {
                   step: '3',
-                  title: 'Send instantly',
-                  desc: 'Send Bitcoin using Lightning.',
+                  title: 'Bitcoin included',
+                  desc: 'Lightning send and receive stays in the same wallet.',
                   icon: Globe,
                 },
                 {
                   step: '4',
-                  title: 'Spend anywhere',
-                  desc: 'Pay merchants using Lightning.',
+                  title: 'Keep 50/50',
+                  desc: 'Swap between USDC and Bitcoin at a labelled demo price.',
                   icon: Shield,
                 },
               ].map((item) => (
@@ -119,7 +120,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-5xl">
             <h2 className="text-center text-3xl font-bold">Payment methods</h2>
             <p className="mx-auto mt-3 max-w-lg text-center text-muted-foreground">
-              Planned integrations for Zambia&apos;s most popular payment options
+              Demo cash-in and cash-out for USDC and Bitcoin
             </p>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[
@@ -135,7 +136,7 @@ export default function LandingPage() {
                 >
                   <span className="font-medium">{method}</span>
                   <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                    Planned
+                    Demo
                   </span>
                 </div>
               ))}
@@ -148,7 +149,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-2xl rounded-2xl bg-emerald-600 p-10 text-center text-white">
             <h2 className="text-2xl font-bold">Ready to try EasternBlock?</h2>
             <p className="mt-3 text-emerald-100">
-              Create a free demo account and explore Bitcoin Lightning for Zambia.
+              Create a free demo account. USDC on Arc, with Bitcoin included.
             </p>
             <LinkButton
               size="lg"
@@ -163,7 +164,7 @@ export default function LandingPage() {
 
       <footer className="border-t px-4 py-8 text-center text-sm text-muted-foreground">
         <p>
-          <strong>EasternBlock</strong> — Bitcoin made simple for Zambia.
+          <strong>EasternBlock</strong> — USDC made simple for Zambia, with Bitcoin included.
         </p>
         <p className="mt-1">Demo application. Not authorized for real financial services.</p>
       </footer>

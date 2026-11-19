@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { formatZMW } from '@/lib/bitcoin/price';
 import { Card, CardContent } from '@/components/ui/card';
 import { LinkButton } from '@/components/ui/link-button';
@@ -43,6 +44,12 @@ export function UsdcBalanceCard({
         <p className="mt-3 text-xs text-muted-foreground">
           {rateLabel} · 1 USDC ≈ {formatZMW(zmwPerUsd)}. {sourceLabel}. One balance, shown at 6 decimals.
         </p>
+        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          <Link href="/usdc/buy" className="font-medium text-sky-800 hover:underline dark:text-sky-300">Add</Link>
+          <Link href="/usdc/send" className="font-medium text-sky-800 hover:underline dark:text-sky-300">Send</Link>
+          <Link href="/usdc/receive" className="font-medium text-sky-800 hover:underline dark:text-sky-300">Receive</Link>
+          <Link href="/usdc/sell" className="font-medium text-sky-800 hover:underline dark:text-sky-300">Cash out</Link>
+        </div>
       </CardContent>
     </Card>
   );
