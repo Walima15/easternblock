@@ -35,7 +35,7 @@ export async function signup(formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
 
-  const result = createUser(
+  const result = await createUser(
     parsed.data.email,
     parsed.data.password,
     parsed.data.fullName
@@ -59,7 +59,7 @@ export async function login(formData: FormData) {
     return { error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
 
-  const user = authenticateUser(parsed.data.email, parsed.data.password);
+  const user = await authenticateUser(parsed.data.email, parsed.data.password);
   if (!user) {
     return { error: 'Invalid email or password' };
   }
@@ -100,7 +100,7 @@ export async function updateProfile(formData: FormData) {
     updates.phone_number = parsed.data.phoneNumber;
   }
 
-  const result = updateProfileStore(userId, updates);
+  const result = await updateProfileStore(userId, updates);
   if ('error' in result) return { error: result.error };
 
   revalidatePath('/settings');
@@ -110,13 +110,13 @@ export async function updateProfile(formData: FormData) {
 export async function getSessionUser() {
   const userId = await getSessionUserId();
   if (!userId) return null;
-  return getUserById(userId);
+  return await getUserById(userId);
 }
 
 export async function getProfileAction() {
   const userId = await getSessionUserId();
   if (!userId) return null;
-  return getProfile(userId);
+  return await getProfile(userId);
 }
 
 export { getProfileAction as getProfile };
@@ -124,7 +124,7 @@ export { getProfileAction as getProfile };
 export async function getWalletAction() {
   const userId = await getSessionUserId();
   if (!userId) return null;
-  return getWallet(userId);
+  return await getWallet(userId);
 }
 
 export { getWalletAction as getWallet };
@@ -132,7 +132,7 @@ export { getWalletAction as getWallet };
 export async function getRecentTransactionsAction(limit = 5) {
   const userId = await getSessionUserId();
   if (!userId) return [];
-  return getRecentTransactions(userId, limit);
+  return await getRecentTransactions(userId, limit);
 }
 
 export { getRecentTransactionsAction as getRecentTransactions };
@@ -140,5 +140,5 @@ export { getRecentTransactionsAction as getRecentTransactions };
 export async function getAllTransactions(type?: string, asset?: string) {
   const userId = await getSessionUserId();
   if (!userId) return [];
-  return getTransactions(userId, type, asset);
+  return await getTransactions(userId, type, asset);
 }

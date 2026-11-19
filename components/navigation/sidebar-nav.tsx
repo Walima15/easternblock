@@ -11,25 +11,23 @@ import {
   Settings,
   Shield,
   History,
-  CircleDollarSign,
   BookOpen,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/buy', label: 'Buy Bitcoin', icon: ShoppingCart },
-  { href: '/sell', label: 'Sell Bitcoin', icon: ArrowDownLeft },
-  { href: '/send', label: 'Send', icon: Send },
-  { href: '/receive', label: 'Receive', icon: QrCode },
-  { href: '/usdc/buy', label: 'Buy USDC', icon: CircleDollarSign },
-  { href: '/usdc/sell', label: 'Sell USDC', icon: ArrowDownLeft },
-  { href: '/usdc/send', label: 'Send USDC', icon: Send },
-  { href: '/usdc/receive', label: 'Receive USDC', icon: QrCode },
-  { href: '/transactions', label: 'Transactions', icon: History },
-  { href: '/about-arc', label: 'About Arc', icon: BookOpen },
-  { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/kyc', label: 'KYC', icon: Shield },
+  { href: '/dashboard', label: 'Dashboard', icon: Home, also: [] as string[] },
+  { href: '/usdc/buy', label: 'Add USDC', icon: ShoppingCart, also: [] as string[] },
+  { href: '/buy', label: 'Add Bitcoin', icon: ShoppingCart, also: [] as string[] },
+  { href: '/usdc/send', label: 'Send', icon: Send, also: ['/send'] },
+  { href: '/usdc/receive', label: 'Receive', icon: QrCode, also: ['/receive'] },
+  { href: '/usdc/sell', label: 'Cash out', icon: ArrowDownLeft, also: ['/sell'] },
+  { href: '/swap', label: 'Swap', icon: ArrowLeftRight, also: [] as string[] },
+  { href: '/transactions', label: 'Activity', icon: History, also: [] as string[] },
+  { href: '/about-arc', label: 'About Arc', icon: BookOpen, also: [] as string[] },
+  { href: '/settings', label: 'Settings', icon: Settings, also: [] as string[] },
+  { href: '/kyc', label: 'KYC', icon: Shield, also: [] as string[] },
 ];
 
 export function SidebarNav() {
@@ -43,8 +41,8 @@ export function SidebarNav() {
         </Link>
       </div>
       <nav className="space-y-1 p-4">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+        {navItems.map(({ href, label, icon: Icon, also }) => {
+          const active = pathname === href || (also ?? []).includes(pathname);
           return (
             <Link
               key={href}

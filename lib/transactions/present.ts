@@ -8,6 +8,10 @@ export function transactionAsset(tx: Transaction): 'btc' | 'usdc' {
 }
 
 export function transactionTitle(tx: Transaction): string {
+  if (tx.type === 'swap') {
+    if (tx.memo?.includes('Keep 50/50')) return 'Rebalanced to 50/50';
+    return transactionAsset(tx) === 'usdc' ? 'Swapped into USDC' : 'Swapped into Bitcoin';
+  }
   if (transactionAsset(tx) === 'usdc') {
     const titles: Record<string, string> = {
       buy: 'USDC Purchased',
@@ -27,10 +31,26 @@ export function transactionTitle(tx: Transaction): string {
 }
 
 export function transactionAmountText(tx: Transaction): string {
+  if (tx.type === 'swap' && tx.counter_asset) {
+    const spent =
+      tx.counter_asset === 'usdc'
+        ? `${formatUsdcFromBaseUnits(BigInt(tx.counter_usdc_base_units || '0'))} USDC`
+        : formatSats(tx.counter_sats ?? tx.amount_sats);
+    const received =
+      transactionAsset(tx) === 'usdc'
+        ? `${formatUsdcFromBaseUnits(BigInt(tx.amount_usdc_base_units || tx.counter_usdc_base_units || '0'))} USDC`
+        : formatSats(tx.amount_sats);
+    return `${spent} → ${received}`;
+  }
   if (transactionAsset(tx) === 'usdc') {
     return `${formatUsdcFromBaseUnits(BigInt(tx.amount_usdc_base_units || '0'))} USDC`;
   }
   return formatSats(tx.amount_sats);
+}
+
+export function transactionSign(tx: Transaction): string {
+  if (tx.type === 'swap') return '';
+  return transactionIsCredit(tx) ? '+' : '−';
 }
 
 export function transactionZmw(tx: Transaction, btcPrice: number, zmwPerUsd: number): number {

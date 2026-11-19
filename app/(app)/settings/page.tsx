@@ -46,6 +46,9 @@ export default async function SettingsPage() {
               <span className="text-muted-foreground">Currency</span>
               <span>ZMW (Zambian Kwacha)</span>
             </div>
+            <p className="pt-2 text-xs text-muted-foreground">
+              Demo accounts, balances, and activity stay in this browser. Nothing is written to the server disk, and signing keys are not stored in page storage.
+            </p>
           </CardContent>
         </Card>
 

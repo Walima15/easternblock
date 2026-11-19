@@ -16,8 +16,9 @@ export function mockArcAddressForUser(userId: string): string {
 }
 
 /**
- * Demo-only testnet key. Stored in the local JSON file so the sample app can
- * sign. Production must use a KMS or a wallet the person controls.
+ * Demo-only testnet key. Stored in the httpOnly browser cookie so the sample
+ * app can sign. It is not copied into localStorage. Production must use a KMS
+ * or a wallet the person controls.
  */
 export function generateTestnetKeypair(): { address: string; privateKey: `0x${string}` } {
   const privateKey = generatePrivateKey();

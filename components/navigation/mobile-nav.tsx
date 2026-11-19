@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, ShoppingCart, Send, QrCode, User } from 'lucide-react';
+import { Home, ShoppingCart, Send, QrCode, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/dashboard', label: 'Home', icon: Home },
-  { href: '/buy', label: 'Buy', icon: ShoppingCart },
-  { href: '/send', label: 'Send', icon: Send },
-  { href: '/receive', label: 'Receive', icon: QrCode },
-  { href: '/settings', label: 'Profile', icon: User },
+  { href: '/dashboard', label: 'Home', icon: Home, also: [] as string[] },
+  { href: '/usdc/buy', label: 'Add', icon: ShoppingCart, also: ['/buy'] },
+  { href: '/usdc/send', label: 'Send', icon: Send, also: ['/send'] },
+  { href: '/usdc/receive', label: 'Receive', icon: QrCode, also: ['/receive'] },
+  { href: '/transactions', label: 'Activity', icon: History, also: [] as string[] },
 ];
 
 export function MobileNav() {
@@ -19,8 +19,11 @@ export function MobileNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
       <div className="mx-auto flex max-w-lg items-center justify-around px-2 py-2">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+        {navItems.map(({ href, label, icon: Icon, also }) => {
+          const active =
+            pathname === href ||
+            pathname.startsWith(`${href}/`) ||
+            also.some((path) => pathname === path || pathname.startsWith(`${path}/`));
           return (
             <Link
               key={href}

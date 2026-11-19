@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signup } from '@/lib/actions/auth';
+import { refreshBrowserBackup } from '@/components/demo/browser-backup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ export function SignupForm() {
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
+    await refreshBrowserBackup();
     const result = await signup(formData);
     if (result?.error) {
       setError(result.error);
@@ -69,7 +71,7 @@ export function SignupCard() {
           <span className="text-emerald-600">Eastern</span>Block
         </Link>
         <CardTitle>Create your account</CardTitle>
-        <CardDescription>Bitcoin made simple for Zambia. Demo mode only.</CardDescription>
+        <CardDescription>USDC made simple for Zambia, with Bitcoin included. Demo mode only.</CardDescription>
       </CardHeader>
       <SignupForm />
     </Card>

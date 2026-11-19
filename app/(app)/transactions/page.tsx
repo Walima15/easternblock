@@ -6,7 +6,7 @@ import {
   transactionAmountText,
   transactionAsset,
   transactionFeeText,
-  transactionIsCredit,
+  transactionSign,
   transactionTitle,
   transactionZmw,
 } from '@/lib/transactions/present';
@@ -33,7 +33,6 @@ function TransactionRow({
   btcPrice: number;
   zmwPerUsd: number;
 }) {
-  const isPositive = transactionIsCredit(tx);
   const zmw = transactionZmw(tx, btcPrice, zmwPerUsd);
   const asset = transactionAsset(tx);
   const fee = transactionFeeText(tx);
@@ -44,11 +43,16 @@ function TransactionRow({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">{transactionTitle(tx)}</p>
-            {asset === 'usdc' && (
-              <Badge variant="outline" className="border-sky-300 text-sky-800 dark:text-sky-200">
-                USDC
-              </Badge>
-            )}
+            <Badge
+              variant="outline"
+              className={
+                asset === 'usdc'
+                  ? 'border-sky-300 text-sky-800 dark:text-sky-200'
+                  : 'border-emerald-300 text-emerald-800 dark:text-emerald-200'
+              }
+            >
+              {asset === 'usdc' ? 'USDC' : 'Bitcoin'}
+            </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {new Date(tx.created_at).toLocaleDateString('en-ZM', {
@@ -73,8 +77,8 @@ function TransactionRow({
           )}
         </div>
         <div className="text-right">
-          <p className={`font-semibold ${isPositive ? 'text-emerald-600' : ''}`}>
-            {isPositive ? '+' : '-'}
+          <p className={`font-semibold ${transactionSign(tx) === '+' ? 'text-emerald-600' : ''}`}>
+            {transactionSign(tx)}
             {transactionAmountText(tx)}
           </p>
           <p className="text-sm text-muted-foreground">≈ {formatZMW(Number(zmw))}</p>
@@ -111,11 +115,12 @@ export default async function TransactionsPage({
     { id: 'sell', label: 'Sold' },
     { id: 'send', label: 'Sent' },
     { id: 'receive', label: 'Received' },
+    { id: 'swap', label: 'Swapped' },
   ];
   const assetFilters = [
-    { id: 'all', label: 'All assets' },
-    { id: 'btc', label: 'Bitcoin' },
+    { id: 'all', label: 'All' },
     { id: 'usdc', label: 'USDC' },
+    { id: 'btc', label: 'Bitcoin' },
   ];
 
   return (

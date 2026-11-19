@@ -37,6 +37,9 @@ yarn-error.log*
 # local demo data
 /data/demo-db.json
 
+# netlify
+.netlify
+
 # vercel
 .vercel
 

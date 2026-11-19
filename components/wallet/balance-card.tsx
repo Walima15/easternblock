@@ -4,7 +4,7 @@ import { DEMO_USD_ZMW_RATE } from '@/lib/fx/usd-zmw';
 import {
   transactionAmountText,
   transactionAsset,
-  transactionIsCredit,
+  transactionSign,
   transactionTitle,
   transactionZmw,
 } from '@/lib/transactions/present';
@@ -30,6 +30,12 @@ export function BalanceCard({ balanceSats, btcPrice }: BalanceCardProps) {
         <div className="mt-2">
           <p className="text-3xl font-bold tracking-tight">{formatSats(balanceSats)}</p>
           <p className="mt-1 text-lg text-muted-foreground">≈ {formatZMW(zmwEquivalent)}</p>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+          <Link href="/buy" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Add</Link>
+          <Link href="/send" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Send</Link>
+          <Link href="/receive" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Receive</Link>
+          <Link href="/sell" className="font-medium text-emerald-700 hover:underline dark:text-emerald-400">Cash out</Link>
         </div>
       </CardContent>
     </Card>
@@ -82,24 +88,28 @@ export function TransactionList({
   return (
     <div className="space-y-2">
       {transactions.map((tx) => {
-        const isPositive = transactionIsCredit(tx);
         const zmw = transactionZmw(tx, btcPrice, zmwPerUsd);
         const asset = transactionAsset(tx);
 
         return (
           <Link
             key={tx.id}
-            href={`/transactions?id=${tx.id}`}
+            href={`/transactions?asset=${asset}`}
             className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
           >
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-medium capitalize">{transactionTitle(tx)}</p>
-                {asset === 'usdc' && (
-                  <Badge variant="outline" className="border-sky-300 text-sky-800 dark:text-sky-200">
-                    USDC
-                  </Badge>
-                )}
+                <p className="font-medium">{transactionTitle(tx)}</p>
+                <Badge
+                  variant="outline"
+                  className={
+                    asset === 'usdc'
+                      ? 'border-sky-300 text-sky-800 dark:text-sky-200'
+                      : 'border-emerald-300 text-emerald-800 dark:text-emerald-200'
+                  }
+                >
+                  {asset === 'usdc' ? 'USDC' : 'Bitcoin'}
+                </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
                 {new Date(tx.created_at).toLocaleDateString('en-ZM', {
@@ -110,8 +120,8 @@ export function TransactionList({
               </p>
             </div>
             <div className="text-right">
-              <p className={`font-semibold ${isPositive ? 'text-emerald-600' : ''}`}>
-                {isPositive ? '+' : '-'}
+              <p className={`font-semibold ${transactionSign(tx) === '+' ? 'text-emerald-600' : ''}`}>
+                {transactionSign(tx)}
                 {transactionAmountText(tx)}
               </p>
               <p className="text-xs text-muted-foreground">≈ {formatZMW(Number(zmw))}</p>

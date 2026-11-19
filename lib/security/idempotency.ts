@@ -9,7 +9,7 @@ export async function checkIdempotency(
   key: string,
   operation: string
 ): Promise<{ exists: boolean; transactionId?: string; response?: unknown }> {
-  const existing = getIdempotency(userId, key);
+  const existing = await getIdempotency(userId, key);
 
   if (existing) {
     return {
@@ -19,7 +19,7 @@ export async function checkIdempotency(
     };
   }
 
-  createIdempotency(userId, key, operation);
+  await createIdempotency(userId, key, operation);
   return { exists: false };
 }
 
@@ -29,5 +29,5 @@ export async function completeIdempotency(
   transactionId: string,
   response: unknown
 ) {
-  completeIdempotencyRecord(userId, key, transactionId, response);
+  await completeIdempotencyRecord(userId, key, transactionId, response);
 }
